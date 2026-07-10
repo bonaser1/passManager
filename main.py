@@ -3,16 +3,17 @@ import database
 import password_generator as pg
 
 while True:
-
+    #Starting app interface
     menu.main()
 
+    #processing user choices
     try:
         choice = database.get_choice()
 
     except ValueError:
         print('Please enter a number.')
         continue
-
+    
     if choice == 1:
         database.search_passwords()
 

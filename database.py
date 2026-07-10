@@ -8,8 +8,7 @@ DB_NAME = BASE_DIR / 'passwordsDataBase.db'
 
 def get_app_searching():
     app = input('Enter the app name: ')
-    user = input('Enter the username: ')
-    return app, user
+    return app
 
 def get_app():
     app = input('Enter the app name: ')
@@ -31,12 +30,13 @@ def search_passwords():
             print('\n>>> No saved passwords')
         else:
             #Searching the db for stored passwords
-            app, user = get_app_searching()
-            cursor.execute("SELECT password FROM passwords WHERE app_name=? AND user_name=?", (app, user))
-            search_res = cursor.fetchone()
+            app = get_app_searching()
+            cursor.execute("SELECT password FROM passwords WHERE app_name=? AND user_name=?", (app,))
+            search_res = cursor.fetchall()
             if search_res:
                 print('passwords found: ')
-                print(f'    {search_res[0]}')
+                for password in search_res:
+                    print(f'>>> {password}')
             else:
                 print('\n>>> No data found!!')
 
