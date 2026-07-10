@@ -1,4 +1,4 @@
-import secrets, string, sqlite3
+import sqlite3
 
 #the app interface
 print('Password Manager App v0.1\n')
@@ -7,11 +7,21 @@ print('         [2] Saving a password?')
 print('         [3] Deleting a password?')
 print('         [4] Genreating a password?')
 print('         [0] Exit')
-choice = input('$> ')
+choice = int(input('$> '))
+
+def get_app_searching():
+    app = input('Enter the app name: ')
+    return app
+
+def get_app_adding():
+    app = input('Enter the app name: ')
+    user = input('Enter the username: ')
+    password = input('Enter the password: ')
+    return app, user, password
 
 if choice in [1,2,3]:
     #connecting to db
-    connect = sqlite3.connect('\passwordsDataBase.db')
+    connect = sqlite3.connect('passwordsDataBase.db')
     cursor = connect.cursor()
 
     if choice == 1:
@@ -22,9 +32,8 @@ if choice in [1,2,3]:
             print('No saved passwords')
         else:
             #Searching the db for stored passwords
-            app_name = input('Enter the app name: ')
-            user_name = input('Enter the username: ')
-            cursor.excute("SELECT password FROM passwords WHERE app_name=? AND user_name=?", (app_name, user_name))
+            app, user = get_app_searching()
+            cursor.execute("SELECT password FROM passwords WHERE app_name=?", (app, user))
             search_res = cursor.fetchall()
             if search_res:
                 print('passwords found: ')
@@ -33,21 +42,21 @@ if choice in [1,2,3]:
                 print('No data found!!')
 
     elif choice == 2:
-        app_name = input('Enter the app name: ')
-        user_name = input('Enter the username: ')
-        pass_w = input('Enter the password: ')
-        cursor.execute("INSERT INTO passwords(app_name, user_name, password) VALUES (?, ?, ?)", (app_name, user_name, pass_w))
-        print(f'Done adding {app_name}\'s new password.')
+        app, user, password = get_app_adding()
+        cursor.execute("INSERT INTO passwords(app_name, user_name, password) VALUES (?, ?, ?)", (app, user, password))
+        print(f'Done adding the new password.')
+        connect.commit()
         #return to main menu
 
     elif choice == 3:
         app_name = input('Enter the app name: ')
         user_name = input('Enter the username: ')
-        pass_w = input('Enter the password: ')
+        password = input('Enter the password: ')
         qustion = input('are you sure you want to delete that password? [y/n]: ')
         if qustion == 'y':
-            cursor.execute("DELETE * FROM passwords WHERE app_name=? AND user_name=? AND password=?", (app_name, user_name, pass_w))
+            cursor.execute("DELETE FROM passwords WHERE app_name=? AND user_name=? AND password=?", (app_name, user_name, password))
             print(f'{app_name}\'s password has been deleted.')
+            connect.commit()
             #return to main menu
         elif qustion == 'n':
             pass
@@ -62,6 +71,7 @@ if choice in [1,2,3]:
     elif choice == 0:
         pass
         #exit the app
-
+    cursor.close()
+    connect.close()
 else:
     print('Enter a valid option!!')
