@@ -14,13 +14,13 @@ while True:
 
     if choice in (0,1,2,3,4):
             if choice == 1:
-                database.search_passwords(cursor)
+                database.search_passwords()
 
             elif choice == 2:
-                database.add_password(cursor)
+                database.add_password()
 
             elif choice == 3:
-                database.delete_password(cursor)
+                database.delete_password()
 
             elif choice == 4:
                 print(pg.gen)
