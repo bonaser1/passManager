@@ -13,6 +13,6 @@ cursor.execute("""
     )
 """)
 
-cursor.close()
 connect.commit()
+cursor.close()
 connect.close()
