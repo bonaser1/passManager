@@ -3,7 +3,8 @@ import database
 import password_generator as pg
 
 
-
+database.create_db()
+pg.generate_and_save_key()
 
 while True:
     
