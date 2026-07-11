@@ -1,6 +1,11 @@
 from cryptography.fernet import Fernet
+from pathlib import Path
+
+KEY_FILE = Path("secret.key")
 
 def generate_and_save_key(): 
+    if KEY_FILE.exists():
+        return
     #Generates a key and saves it to a file.
     key = Fernet.generate_key()
     with open("secret.key", "wb") as key_file:
