@@ -1,5 +1,6 @@
 import sqlite3
 from pathlib import Path
+import os
 
 BASE_DIR = Path(__file__).parent
 DB_NAME = BASE_DIR / 'passwordsDataBase.db'
@@ -59,3 +60,6 @@ def delete_password():
             pass
         else:
             print('\n--> Enter a valid value!!')
+
+def clear():
+    os.system("cls")

@@ -3,12 +3,12 @@ import database
 import password_generator as pg
 
 
-print('\n')
-print('Password Manager App v0.1')
+
 
 while True:
     
     #Starting app interface
+    # database.clear()
     menu.main()
 
     #processing user choices
