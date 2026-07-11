@@ -11,6 +11,7 @@ def main_func():
         menu.checking_master_password()
         plain_password = database.get_master_password()
         if database.check_master_password(plain_password):
+            database.clear()
             break
         print(Fore.RED + "> Incorrect master password. Please try again.")
     while True:
@@ -24,6 +25,8 @@ def main_func():
 
         except ValueError:
             print('Please enter a number.')
+            input('\nPress Enter to continue...')
+            database.clear()
             continue
         
         if interface3_choice == 1:
@@ -33,7 +36,8 @@ def main_func():
             database.add_password()
 
         elif interface3_choice == 3:
-            database.delete_password()
+            app, user, password = database.get_app()
+            database.delete_password(app, user)
 
         elif interface3_choice == 4:
             database.generate_password()
@@ -47,7 +51,9 @@ def main_func():
             break
 
         else:
-            print('Enter a valid option!!')
+            print('\n> Enter a valid option!!')
+            input('\nPress Enter to continue...')
+            database.clear()
 
 if database.first_time():
     menu.seting_master_password()
@@ -56,6 +62,8 @@ if database.first_time():
 
     except ValueError:
         print('Please enter a string.')
+        input('\nPress Enter to continue...')
+        database.clear()
 
     if master_password:
         database.set_master_password(master_password)

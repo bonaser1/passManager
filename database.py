@@ -1,7 +1,6 @@
 import sqlite3
 from pathlib import Path
 import os
-from colorama import Fore
 import pyperclip #copy to clipboard
 import password_generator as pg
 import encryption
@@ -44,8 +43,9 @@ def set_master_password(plain_password):
 
         cursor.execute("INSERT INTO master_password(master) VALUES (?)", (hashed_password,))
 
-        print("Password stored successfully!")
+        print(f"\033[32m{"Password stored successfully."}\033[0m")
     input('\nPress Enter to continue...')
+    clear()
 
 def hash_password(plain_password):
     # Convert string to bytes
@@ -57,7 +57,7 @@ def hash_password(plain_password):
     return hashed_password
 
 def get_master_password():
-    return input(Fore.LIGHTGREEN_EX+'$> ')
+    return input('$> ')
 
 def change_master_password(plain_password):
     new_password = hash_password(plain_password)
@@ -65,8 +65,9 @@ def change_master_password(plain_password):
         cursor = connect.cursor()
         cursor.execute("DELETE FROM master_password")
         cursor.execute("INSERT INTO master_password(master) VALUES (?)", (new_password,))
-    print("Password changed successfully!")
+    print(f"\033[32m{"Password changed successfully."}\033[0m")
     input('\nPress Enter to continue...')
+    clear()
 
 def check_master_password(plain_password): # -> bool: 
     password_bytes = plain_password.encode('utf-8')
@@ -80,11 +81,11 @@ def get_choice():
     return int(input('$> '))
 
 def get_app_searching():
-    app = input('Enter the app name: ')
+    app = input('\nEnter the app name: ')
     return app
 
 def get_app():
-    app = input('Enter the app name: ')
+    app = input('\nEnter the app name: ')
     user = input('Enter the username: ')
     password = input('Enter the password: ')
     return app, user, password
@@ -97,25 +98,53 @@ def search_passwords():
         cursor.execute("SELECT 1 FROM passwords LIMIT 1")
         result = cursor.fetchone()
         if not result:
-            print(Fore.GREEN+'\n> No saved passwords')
+            print(f"\033[31m{"\n> No saved passwords"}\033[0m")
+            input('\nPress Enter to continue...')
+            clear()
         else:
             #Searching the db for stored passwords
             app = get_app_searching()
             cursor.execute("SELECT user_name, password FROM passwords WHERE app_name=?", (app,))
             search_res = cursor.fetchall()
             if search_res:
-                print(Fore.LIGHTGREEN_EX+'\n> passwords found: ')
+                print('\n> passwords found: ')
                 for id, (user, password) in enumerate(search_res, start=1):
-                    print(Fore.LIGHTGREEN_EX+f'{id}. {user}')
-                choice = int(input('What password you want to copy? '))
+                    print(f'    {id}. {user}')
+                choice = int(input('\n> Choose a user: '))
                 if 1 <= choice <= len(search_res):
                     user, password = search_res[choice - 1]
-                    pyperclip.copy(encryption.decrypt_password(password))
-                    print(Fore.LIGHTGREEN_EX+'> Password copied to clipboard.')
+                    
                 else:
-                    print(Fore.GREEN+'\n> Invalid option.')
+                    print(f"\033[31m{"\n> Invalid option."}\033[0m")
+                    input('\nPress Enter to continue...')
+                    clear()
+                menu.options_list()
+                option = input('\n> Choose an option: ')
+                if option.upper() == 'C':
+                    pyperclip.copy(encryption.decrypt_password(password))
+                    print(f"\033[32m{"> Password copied to clipboard."}\033[0m")
+                    input('\nPress Enter to continue...')
+                    clear()
+                elif option.upper() == 'V':
+                    print(encryption.decrypt_password(password))
+                    input('\nPress Enter to continue...')
+                    clear()
+                elif option.upper() == 'D':
+                    # app, user, password = get_app()
+                    delete_password(app, user)
+                    input('\nPress Enter to continue...')
+                    clear()
+                elif option.upper() == 'E':
+                    app, user, password = get_app()
+                    edit_password(app, user)
+                else:
+                    print(f"\033[31m{"\n> Invalid option."}\033[0m")
+                    input('\nPress Enter to continue...')
+                    clear()
             else:
-                print(Fore.GREEN+'\n> No data found!!')
+                print(f"\033[31m{"\n> No data found."}\033[0m")
+                input('\nPress Enter to continue...')
+                clear()
 
 def add_password():
     with sqlite3.connect(DB_NAME) as connect:
@@ -123,34 +152,57 @@ def add_password():
         app, user, password = get_app()
         encrypted_password = encryption.encrypt_password(password)
         cursor.execute("INSERT INTO passwords(app_name, user_name, password) VALUES (?, ?, ?)", (app, user, encrypted_password))
-        print(Fore.GREEN+'\n> Done adding the new password.')
+        print(f"\033[32m{"\n> Done adding the new password."}\033[0m")
         input('\nPress Enter to continue...')
+        clear()
 
-def delete_password():
+def delete_password(app, user):
     with sqlite3.connect(DB_NAME) as connect:
         cursor = connect.cursor()
-        app, user, password = get_app()
+        
         question = input('are you sure you want to delete that password? [y/n]: ')
         if question == 'y':
-            row_count_before = cursor.rowcount
+            row_count_before = cursor.rowcount()
             cursor.execute("DELETE FROM passwords WHERE app_name=? AND user_name=?", (app, user))
-            if cursor.rowcount < row_count_before:
-                print("> Password deleted.")
+            if cursor.rowcount() < row_count_before:
+                print(f"\033[32m{"> Password deleted."}\033[0m")
                 input('\nPress Enter to continue...')
+                clear()
             else:
-                print("> Password not found.")
+                print(f"\033[31m{"> Password not found."}\033[0m")
                 input('\nPress Enter to continue...')
+                clear()
         elif question == 'n':
             pass
         else:
-            print(Fore.GREEN+'\n> Enter a valid option!')
+            print(f"\033[31m{"\n> Enter a valid option!"}\033[0m")
+
+def edit_password(app, user):
+    while True:
+        new_password = input('Enter the new password: ')
+        confirm_new_password = input('Confirm the new password: ')
+        if new_password == confirm_new_password:
+            hashed_new_password = hash_password(new_password)
+            with sqlite3.connect(DB_NAME) as connect:
+                cursor = connect.cursor()
+                # cursor.execute("DELETE FROM passwords WHERE app_name=? AND user_name=?", (app, user))
+                cursor.execute("UPDATE passwords SET password=? WHERE app_name=? AND user_name=? ", (hashed_new_password, app, user))
+                print(f"\033[32m{"Password modified successfully."}\033[0m")
+                input('\nPress Enter to continue...')
+                clear()
+                break
+        else:
+            print(f"\033[31m{"> Passwords do not match. Please try again."}\033[0m")
+            continue
+
 
 def generate_password():
     password = pg.password_gen()
     print(password)
     pyperclip.copy(password)
-    print(Fore.LIGHTGREEN_EX+'\n> Password copied to clipboard.')
+    print(f"\033[32m{"\n> Password copied to clipboard."}\033[0m")
     input('\nPress Enter to continue...')
+    clear()
 
 def clear():
     os.system("cls" if os.name == "nt" else "clear")
@@ -161,7 +213,7 @@ def change_master_password_flow():
         current_password = get_master_password()
 
         if not check_master_password(current_password):
-            print(Fore.RED + "> Incorrect current password.")
+            print(f"\033[31m{"> Incorrect current password."}\033[0m")
             continue
 
         while True:
@@ -171,13 +223,15 @@ def change_master_password_flow():
             confirm_password = input("Confirm new password: ")
 
             if new_password != confirm_password:
-                print(Fore.RED + "> Passwords do not match. Please try again.")
+                print(f"\033[31m{"> Passwords do not match. Please try again."}\033[0m") #
                 continue
 
             change_master_password(new_password)
             # print(Fore.GREEN + "> Master password changed successfully.")
             break   # or break if this is inside another function
+        break
 
     else:
-        print(Fore.RED + "> Too many failed attempts.")
+        print(f"\033[31m{"> Too many failed attempts."}\033[0m")
         input('\nPress Enter to continue...')
+        clear()
