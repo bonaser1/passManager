@@ -2,7 +2,6 @@ import encryption
 import os
 import sqlite3
 from pathlib import Path
-import functions
 import pyperclip
 import encryption
 import bcrypt
@@ -59,8 +58,8 @@ def main_func():
             add_password()
 
         elif interface3_choice == 3:
-            app, user, password = get_app()
-            delete_password(app, user)
+            domain, user, password = get_info()
+            delete_password(domain, user)
 
         elif interface3_choice == 4:
             generate_password()
@@ -84,15 +83,15 @@ def main_func():
 def get_choice():
     return int(input('> Choose an option: '))
 
-def searche_by_app():
-    app = input('\n> Enter the app name: ')
-    return app
+def searche_by_domain():
+    domain = input('\n> Enter the domain name: ')
+    return domain
 
-def get_app():
-    app = input('\n> Enter the app name: ')
+def get_info():
+    domain = input('\n> Enter the domain name: ')
     user = input('> Enter the username: ')
     password = input('> Enter the password: ')
-    return app, user, password
+    return domain, user, password
 
 # ------------------------
 # DataBase
@@ -108,7 +107,7 @@ def create_db():
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS passwords (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
-                app_name TEXT NOT NULL,
+                domain TEXT NOT NULL,
                 user_name TEXT NOT NULL,
                 password TEXT NOT NULL,
                 created_at TEXT DEFAULT CURRENT_TIMESTAMP
@@ -212,8 +211,8 @@ def search_passwords():
             input('\nPress Enter to continue...')
             clear()
         else:
-            app = searche_by_app()
-            cursor.execute("SELECT user_name, password FROM passwords WHERE app_name=?", (app,))
+            domain = searche_by_domain()
+            cursor.execute("SELECT user_name, password FROM passwords WHERE domain_name=?", (domain,))
             search_res = cursor.fetchall()
             if search_res:
                 print('\n> passwords found: ')
@@ -239,12 +238,12 @@ def search_passwords():
                     input('\nPress Enter to continue...')
                     clear()
                 elif option.upper() == 'D':
-                    delete_password(app, user)
+                    delete_password(domain, user)
                     input('\nPress Enter to continue...')
                     clear()
                 elif option.upper() == 'E':
-                    app, user, password = get_app()
-                    edit_password(app, user)
+                    domain, user, password = get_info()
+                    edit_password(domain, user)
                 else:
                     print(f"\033[31m{"\n> Invalid option."}\033[0m")
                     input('\nPress Enter to continue...')
@@ -257,14 +256,14 @@ def search_passwords():
 def add_password():
     with connect(DB_NAME) as connect:
         cursor = connect.cursor()
-        app, user, password = get_app()
+        domain, user, password = get_info()
         encrypted_password = encryption.encrypt_password(password)
-        cursor.execute("INSERT INTO passwords(app_name, user_name, password) VALUES (?, ?, ?)", (app, user, encrypted_password))
+        cursor.execute("INSERT INTO passwords(domain_name, user_name, password) VALUES (?, ?, ?)", (domain, user, encrypted_password))
         print(f"\033[32m{"\n> Done adding the new password."}\033[0m")
         input('\nPress Enter to continue...')
         clear()
 
-def edit_password(app, user):
+def edit_password(domain, user):
     while True:
         new_password = input('> Enter the new password: ')
         confirm_new_password = input('> Confirm the new password: ')
@@ -272,7 +271,7 @@ def edit_password(app, user):
             hashed_new_password = hash_password(new_password)
             with connect_database(DB_NAME) as connect:
                 cursor = connect.cursor()
-                cursor.execute("UPDATE passwords SET password=? WHERE app_name=? AND user_name=? ", (hashed_new_password, app, user))
+                cursor.execute("UPDATE passwords SET password=? WHERE domain_name=? AND user_name=? ", (hashed_new_password, domain, user))
                 print(f"\033[32m{"> Password modified successfully."}\033[0m")
                 input('\nPress Enter to continue...')
                 clear()
@@ -281,14 +280,14 @@ def edit_password(app, user):
             print(f"\033[31m{"> Passwords do not match. Please try again."}\033[0m")
             continue
 
-def delete_password(app, user):
+def delete_password(domain, user):
     with connect_database(DB_NAME) as connect:
         cursor = connect.cursor()
         
         question = input('> are you sure you want to delete that password? [y/n]: ')
         if question == 'y':
             row_count_before = cursor.rowcount()
-            cursor.execute("DELETE FROM passwords WHERE app_name=? AND user_name=?", (app, user))
+            cursor.execute("DELETE FROM passwords WHERE domain_name=? AND user_name=?", (domain, user))
             if cursor.rowcount() < row_count_before:
                 print(f"\033[32m{"> Password deleted."}\033[0m")
                 input('\nPress Enter to continue...')
