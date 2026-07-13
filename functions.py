@@ -43,7 +43,7 @@ def main_func():
 
         menu.main()
         try:
-            interface3_choice = get_choice()
+            choice = get_choice()
 
         except ValueError:
             print(f"\033[31m{"> Please enter a number."}\033[0m")
@@ -51,23 +51,23 @@ def main_func():
             clear()
             continue
         
-        if interface3_choice == 1:
+        if choice == 1:
             search_passwords()
 
-        elif interface3_choice == 2:
+        elif choice == 2:
             add_password()
 
-        elif interface3_choice == 3:
+        elif choice == 3:
             domain, user, password = get_info()
             delete_password(domain, user)
 
-        elif interface3_choice == 4:
+        elif choice == 4:
             generate_password()
 
-        elif interface3_choice == 5:
+        elif choice == 5:
             change_master_password_flow()
                     
-        elif interface3_choice == 0:
+        elif choice == 0:
             break
 
         else:
