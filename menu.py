@@ -1,4 +1,6 @@
-#first luanch interface
+# ------------------------
+# First luanch interface
+# ------------------------
 def seting_master_password():
     print('\n')
     print('     ╔════════════════════════════════════════╗')
@@ -7,7 +9,10 @@ def seting_master_password():
     print('     ║ > Please enter a master password:      ║')
     print('     ╚════════════════════════════════════════╝')
 
-#master password check
+
+# ------------------------
+# Master password 
+# ------------------------
 def verifing_master_password():
     print('\n')
     print('     ╔════════════════════════════════════════╗')
@@ -24,7 +29,10 @@ def change_master_password():
     print('     ║ > Enter the new master password:       ║')
     print('     ╚════════════════════════════════════════╝')
 
-#main interface
+
+# ------------------------
+# Main interface
+# ------------------------
 def main():
     print('\n')
     print('     ╔════════════════════════════════════════╗')
@@ -39,6 +47,9 @@ def main():
     print('     ╚════════════════════════════════════════╝')
 
 
+# ------------------------
+# Option list
+# ------------------------
 def options_list():
     print('\n')
     print('     ╔════════════════════════════════════════╗')
