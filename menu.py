@@ -8,7 +8,7 @@ def seting_master_password():
     print('     ╚════════════════════════════════════════╝')
 
 #master password check
-def checking_master_password():
+def verifing_master_password():
     print('\n')
     print('     ╔════════════════════════════════════════╗')
     print('     ║        Password Manager App v0.2       ║')

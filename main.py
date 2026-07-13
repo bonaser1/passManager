@@ -1,72 +1,22 @@
 import menu
-import database
+import functions
 import encryption
-from colorama import Fore
 
-database.create_db()
+functions.create_db()
 encryption.generate_and_save_key()
 
-def main_func():
-    while True:
-        menu.checking_master_password()
-        plain_password = database.get_master_password()
-        if database.check_master_password(plain_password):
-            database.clear()
-            break
-        print(Fore.RED + "> Incorrect master password. Please try again.")
-    while True:
-        #Starting app interface
-        # database.clear()
-        menu.main()
-
-        #processing user choices
-        try:
-            interface3_choice = database.get_choice()
-
-        except ValueError:
-            print('Please enter a number.')
-            input('\nPress Enter to continue...')
-            database.clear()
-            continue
-        
-        if interface3_choice == 1:
-            database.search_passwords()
-
-        elif interface3_choice == 2:
-            database.add_password()
-
-        elif interface3_choice == 3:
-            app, user, password = database.get_app()
-            database.delete_password(app, user)
-
-        elif interface3_choice == 4:
-            database.generate_password()
-
-        elif interface3_choice == 5:
-            database.change_master_password_flow()
-                    
-                
-
-        elif interface3_choice == 0:
-            break
-
-        else:
-            print('\n> Enter a valid option!!')
-            input('\nPress Enter to continue...')
-            database.clear()
-
-if database.first_time():
+if functions.check_master_password():
     menu.seting_master_password()
     try:
-        master_password = database.get_master_password()
+        master_password = functions.get_master_password()
 
     except ValueError:
-        print('Please enter a string.')
+        print('> Please enter a string.')
         input('\nPress Enter to continue...')
-        database.clear()
+        functions.clear()
 
     if master_password:
-        database.set_master_password(master_password)
-        main_func()
+        functions.set_master_password(master_password)
+        functions.main_func()
 else:
-    main_func()
+    functions.main_func()
