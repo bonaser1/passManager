@@ -1,7 +1,7 @@
 # ------------------------
 # First luanch interface
 # ------------------------
-def seting_master_password():
+def setting_master_password():
     print('\n')
     print('     ╔════════════════════════════════════════╗')
     print('     ║        Password Manager App v0.2       ║')
@@ -13,7 +13,7 @@ def seting_master_password():
 # ------------------------
 # Master password 
 # ------------------------
-def verifing_master_password():
+def verifying_master_password():
     print('\n')
     print('     ╔════════════════════════════════════════╗')
     print('     ║        Password Manager App v0.2       ║')

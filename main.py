@@ -5,7 +5,7 @@ functions.create_db()
 functions.generate_and_save_key()
 
 if functions.check_master_password():
-    menu.seting_master_password()
+    menu.setting_master_password()
     try:
         master_password = functions.get_master_password()
 

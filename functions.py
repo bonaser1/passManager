@@ -20,17 +20,20 @@ KEY_FILE = Path("secret.key")
 # OS
 # ------------------------
 
-def clear():
+def clear() -> None:
     os.system("cls" if os.name == "nt" else "clear")
 
+def pause():
+    input("\nPress Enter to continue...")
+    clear()
 
 # ------------------------
 # Main function
 # ------------------------
 
-def main_func():
+def main_func() -> None:
     while True:
-        menu.verifing_master_password()
+        menu.verifying_master_password()
         plain_password = get_master_password()
         if verify_master_password(plain_password):
             clear()
@@ -45,8 +48,7 @@ def main_func():
 
         except ValueError:
             print(f"\033[31m{"> Please enter a number."}\033[0m")
-            input('\nPress Enter to continue...')
-            clear()
+            pause()
             continue
         
         if choice == 1:
@@ -58,8 +60,7 @@ def main_func():
         elif choice == 3:
             if not if_passwords_exists():
                 print(f"\033[31m{"\n> No saved passwords"}\033[0m")
-                input('\nPress Enter to continue...')
-                clear()
+                pause()
             else:
                 domain, user, password = get_info()
                 delete_password(domain, user)
@@ -75,22 +76,21 @@ def main_func():
 
         else:
             print(f"\033[31m{"\n> Enter a valid option."}\033[0m") 
-            input('\nPress Enter to continue...')
-            clear()
+            pause()
 
 
 # ------------------------
 # Get input
 # ------------------------
 
-def get_choice():
+def get_choice() -> int:
     return int(input('> Choose an option: '))
 
-def searche_by_domain():
+def search_by_domain() -> str:
     domain = input('\n> Enter the domain name: ')
     return domain
 
-def get_info():
+def get_info() -> tuple[str, str, str]:
     domain = input('\n> Enter the domain name: ')
     user = input('> Enter the username: ')
     password = input('> Enter the password: ')
@@ -100,7 +100,7 @@ def get_info():
 # DataBase
 # ------------------------
 
-def create_db():
+def create_db() -> None:
     with sqlite3.connect(DB_NAME) as connect:
         cursor = connect.cursor()
 
@@ -115,7 +115,7 @@ def create_db():
         """)
         cursor.execute("CREATE TABLE IF NOT EXISTS master_password (master TEXT NOT NULL, created_at TEXT DEFAULT CURRENT_TIMESTAMP)")
 
-def hash_password(plain_password):
+def hash_password(plain_password) -> str:
     password_bytes = plain_password.encode('utf-8')
     
     salt = bcrypt.gensalt()
@@ -127,7 +127,7 @@ def hash_password(plain_password):
 # Master Password
 # ------------------------
 
-def check_master_password():
+def check_master_password() -> bool:
     with sqlite3.connect(DB_NAME) as connect:
         cursor = connect.cursor()
 
@@ -135,7 +135,7 @@ def check_master_password():
         result = cursor.fetchone()
         return result is None
     
-def set_master_password(plain_password):
+def set_master_password(plain_password) -> None:
     hashed_password = hash_password(plain_password)
     with sqlite3.connect(DB_NAME) as connect:
         cursor = connect.cursor()
@@ -143,10 +143,9 @@ def set_master_password(plain_password):
         cursor.execute("INSERT INTO master_password(master) VALUES (?)", (hashed_password,))
 
         print(f"\033[32m{"> Password stored successfully."}\033[0m")
-    input('\nPress Enter to continue...')
-    clear()
+    pause()
 
-def get_master_password():
+def get_master_password() -> str:
     return input('> Enter master password: ')
 
 def verify_master_password(plain_password) -> bool: 
@@ -157,22 +156,21 @@ def verify_master_password(plain_password) -> bool:
         stored_hash = cursor.fetchone()
         return bcrypt.checkpw(password_bytes, stored_hash[0])
 
-def change_master_password(plain_password):
+def change_master_password(plain_password) -> None:
     new_password = hash_password(plain_password)
     with sqlite3.connect(DB_NAME) as connect:
         cursor = connect.cursor()
         cursor.execute("DELETE FROM master_password")
         cursor.execute("INSERT INTO master_password(master) VALUES (?)", (new_password,))
     print(f"\033[32m{"> Password changed successfully."}\033[0m")
-    input('\nPress Enter to continue...')
-    clear()
+    pause()
 
-def change_master_password_flow():
+def change_master_password_flow() -> None:
     for _ in range(3):
         menu.verifing_master_password()
         current_password = get_master_password()
 
-        if not check_master_password(current_password):
+        if not verify_master_password(current_password):
             print(f"\033[31m{"> Incorrect current password."}\033[0m")
             continue
 
@@ -192,8 +190,7 @@ def change_master_password_flow():
 
     else:
         print(f"\033[31m{"> Too many failed attempts."}\033[0m")
-        input('\nPress Enter to continue...')
-        clear()
+        pause()
 
 
 # ------------------------
@@ -210,15 +207,14 @@ def if_passwords_exists() -> bool:
             return False
         return True
 
-def search_passwords():
+def search_passwords() -> None:
     if not if_passwords_exists():
         print(f"\033[31m{"\n> No saved passwords"}\033[0m")
-        input('\nPress Enter to continue...')
-        clear()
+        pause()
     else:
         with sqlite3.connect(DB_NAME) as connect:
             cursor = connect.cursor()
-            domain = searche_by_domain()
+            domain = search_by_domain()
             cursor.execute("SELECT user_name, password FROM passwords WHERE domain_name=?", (domain,))
             search_res = cursor.fetchall()
             if search_res:
@@ -231,19 +227,16 @@ def search_passwords():
                     
                 else:
                     print(f"\033[31m{"\n> Invalid option."}\033[0m")
-                    input('\nPress Enter to continue...')
-                    clear()
+                    pause()
                 menu.options_list()
                 option = input('> Choose an option: ')
                 if option.upper() == 'C':
                     pyperclip.copy(decrypt_password(password))
                     print(f"\033[32m{"> Password copied to clipboard."}\033[0m")
-                    input('\nPress Enter to continue...')
-                    clear()
+                    pause()
                 elif option.upper() == 'V':
                     print(decrypt_password(password))
-                    input('\nPress Enter to continue...')
-                    clear()
+                    pause()
                 elif option.upper() == 'D':
                     delete_password(domain, user)
                 elif option.upper() == 'E':
@@ -251,45 +244,40 @@ def search_passwords():
                     edit_password(domain, user)
                 else:
                     print(f"\033[31m{"\n> Invalid option."}\033[0m")
-                    input('\nPress Enter to continue...')
-                    clear()
+                    pause()
             else:
                 print(f"\033[31m{"\n> No data found."}\033[0m")
-                input('\nPress Enter to continue...')
-                clear()
+                pause()
 
-def add_password():
+def add_password() -> None:
     with sqlite3.connect(DB_NAME) as connect:
         cursor = connect.cursor()
         domain, user, password = get_info()
         encrypted_password = encrypt_password(password)
         cursor.execute("INSERT INTO passwords(domain_name, user_name, password) VALUES (?, ?, ?)", (domain, user, encrypted_password))
         print(f"\033[32m{"\n> Done adding the new password."}\033[0m")
-        input('\nPress Enter to continue...')
-        clear()
+        pause()
 
-def edit_password(domain, user):
+def edit_password(domain, user) -> None:
     while True:
         new_password = input('> Enter the new password: ')
         confirm_new_password = input('> Confirm the new password: ')
         if new_password == confirm_new_password:
-            hashed_new_password = hash_password(new_password)
+            encrypted_password = encrypt_password(new_password)
             with sqlite3.connect(DB_NAME) as connect:
                 cursor = connect.cursor()
-                cursor.execute("UPDATE passwords SET password=? WHERE domain_name=? AND user_name=? ", (hashed_new_password, domain, user))
+                cursor.execute("UPDATE passwords SET password=? WHERE domain_name=? AND user_name=? ", (encrypted_password, domain, user))
                 print(f"\033[32m{"> Password modified successfully."}\033[0m")
-                input('\nPress Enter to continue...')
-                clear()
+                pause()
                 break
         else:
             print(f"\033[31m{"> Passwords do not match. Please try again."}\033[0m")
             continue
 
-def delete_password(domain, user):
+def delete_password(domain, user) -> None:
     if not if_passwords_exists():
         print(f"\033[31m{"\n> No saved passwords"}\033[0m")
-        input('\nPress Enter to continue...')
-        clear()
+        pause()
     else:
         with sqlite3.connect(DB_NAME) as connect:
             cursor = connect.cursor()
@@ -298,32 +286,29 @@ def delete_password(domain, user):
                 cursor.execute("DELETE FROM passwords WHERE domain_name=? AND user_name=?", (domain, user))
                 if cursor.rowcount == 0:
                     print(f"\033[31m{"> Password not found."}\033[0m")
-                    input('\nPress Enter to continue...')
-                    clear()
+                    pause()
                 else:
                     print(f"\033[32m{"> Password deleted."}\033[0m")
-                    input('\nPress Enter to continue...')
-                    clear()
+                    pause()
                     
             elif question == 'n':
                 pass
             else:
                 print(f"\033[31m{"\n> Enter a valid option!"}\033[0m")
 
-def generate_password(length=20):
+def generate_password(length=20) -> None:
     chars = string.ascii_letters+string.digits+string.punctuation
     password = ''.join(secrets.choice(chars) for _ in range(length))
     print(password)
     pyperclip.copy(password)
     print(f"\033[32m{"\n> Password copied to clipboard."}\033[0m")
-    input('\nPress Enter to continue...')
-    clear()
+    pause()
 
 # ------------------------
 # Encryption
 # ------------------------
 
-def generate_and_save_key(): 
+def generate_and_save_key() -> None: 
     if KEY_FILE.exists():
         return
     key = Fernet.generate_key()
@@ -331,7 +316,7 @@ def generate_and_save_key():
         key_file.write(key)
     print("Encryption key generated and saved as 'secret.key'.")
 
-def load_key():
+def load_key() -> None:
     return open("secret.key", "rb").read()
 
 def encrypt_password(password: str) -> str:
