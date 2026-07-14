@@ -2,7 +2,7 @@ import menu
 import functions
 
 functions.create_db()
-functions.generate_and_save_key()
+functions.generate_and_save_key() #needs some inhancements
 
 if functions.check_master_password():
     menu.setting_master_password()
