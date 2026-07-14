@@ -27,6 +27,15 @@ def pause():
     input("\nPress Enter to continue...")
     clear()
 
+def success(message):
+    print(f"\033[32m{message}\033[0m")
+    pause()
+
+def error(message):
+    print(f"\033[31m{message}\033[0m")
+    pause()
+
+
 # ------------------------
 # Main function
 # ------------------------
@@ -38,7 +47,7 @@ def main_func() -> None:
         if verify_master_password(plain_password):
             clear()
             break
-        print(f"\033[31m{"> Incorrect master password. Please try again."}\033[0m")
+        error("> Incorrect master password. Please try again.")
         
     while True:
 
@@ -47,8 +56,7 @@ def main_func() -> None:
             choice = get_choice()
 
         except ValueError:
-            print(f"\033[31m{"> Please enter a number."}\033[0m")
-            pause()
+            error("> Please enter a number.")
             continue
         
         if choice == 1:
@@ -59,8 +67,7 @@ def main_func() -> None:
 
         elif choice == 3:
             if not if_passwords_exists():
-                print(f"\033[31m{"\n> No saved passwords"}\033[0m")
-                pause()
+                error("\n> No saved passwords")
             else:
                 domain, user, password = get_info()
                 delete_password(domain, user)
@@ -75,8 +82,7 @@ def main_func() -> None:
             break
 
         else:
-            print(f"\033[31m{"\n> Enter a valid option."}\033[0m") 
-            pause()
+            error("\n> Enter a valid option.")
 
 
 # ------------------------
@@ -142,8 +148,7 @@ def set_master_password(plain_password) -> None:
 
         cursor.execute("INSERT INTO master_password(master) VALUES (?)", (hashed_password,))
 
-        print(f"\033[32m{"> Password stored successfully."}\033[0m")
-    pause()
+        success("> Password stored successfully.")
 
 def get_master_password() -> str:
     return input('> Enter master password: ')
@@ -162,8 +167,7 @@ def change_master_password(plain_password) -> None:
         cursor = connect.cursor()
         cursor.execute("DELETE FROM master_password")
         cursor.execute("INSERT INTO master_password(master) VALUES (?)", (new_password,))
-    print(f"\033[32m{"> Password changed successfully."}\033[0m")
-    pause()
+    success("> Password changed successfully.")
 
 def change_master_password_flow() -> None:
     for _ in range(3):
@@ -171,7 +175,7 @@ def change_master_password_flow() -> None:
         current_password = get_master_password()
 
         if not verify_master_password(current_password):
-            print(f"\033[31m{"> Incorrect current password."}\033[0m")
+            error("> Incorrect current password.")
             continue
 
         while True:
@@ -181,7 +185,7 @@ def change_master_password_flow() -> None:
             confirm_password = input("> Confirm new password: ")
 
             if new_password != confirm_password:
-                print(f"\033[31m{"> Passwords do not match. Please try again."}\033[0m") #
+                error("> Passwords do not match. Please try again.")
                 continue
 
             change_master_password(new_password)
@@ -189,8 +193,7 @@ def change_master_password_flow() -> None:
         break
 
     else:
-        print(f"\033[31m{"> Too many failed attempts."}\033[0m")
-        pause()
+        error("> Too many failed attempts.")
 
 
 # ------------------------
@@ -209,8 +212,7 @@ def if_passwords_exists() -> bool:
 
 def search_passwords() -> None:
     if not if_passwords_exists():
-        print(f"\033[31m{"\n> No saved passwords"}\033[0m")
-        pause()
+        error("\n> No saved passwords")
     else:
         with sqlite3.connect(DB_NAME) as connect:
             cursor = connect.cursor()
@@ -226,14 +228,12 @@ def search_passwords() -> None:
                     user, password = search_res[choice - 1]
                     
                 else:
-                    print(f"\033[31m{"\n> Invalid option."}\033[0m")
-                    pause()
+                    error("\n> Invalid option.")
                 menu.options_list()
                 option = input('> Choose an option: ')
                 if option.upper() == 'C':
                     pyperclip.copy(decrypt_password(password))
-                    print(f"\033[32m{"> Password copied to clipboard."}\033[0m")
-                    pause()
+                    success("> Password copied to clipboard.")
                 elif option.upper() == 'V':
                     print(decrypt_password(password))
                     pause()
@@ -243,11 +243,9 @@ def search_passwords() -> None:
                     domain, user, password = get_info()
                     edit_password(domain, user)
                 else:
-                    print(f"\033[31m{"\n> Invalid option."}\033[0m")
-                    pause()
+                    error("\n> Invalid option.")
             else:
-                print(f"\033[31m{"\n> No data found."}\033[0m")
-                pause()
+                error("\n> No data found.")
 
 def add_password() -> None:
     with sqlite3.connect(DB_NAME) as connect:
@@ -255,8 +253,7 @@ def add_password() -> None:
         domain, user, password = get_info()
         encrypted_password = encrypt_password(password)
         cursor.execute("INSERT INTO passwords(domain_name, user_name, password) VALUES (?, ?, ?)", (domain, user, encrypted_password))
-        print(f"\033[32m{"\n> Done adding the new password."}\033[0m")
-        pause()
+        success("\n> Done adding the new password.")
 
 def edit_password(domain, user) -> None:
     while True:
@@ -267,17 +264,15 @@ def edit_password(domain, user) -> None:
             with sqlite3.connect(DB_NAME) as connect:
                 cursor = connect.cursor()
                 cursor.execute("UPDATE passwords SET password=? WHERE domain_name=? AND user_name=? ", (encrypted_password, domain, user))
-                print(f"\033[32m{"> Password modified successfully."}\033[0m")
-                pause()
+                success("> Password modified successfully.")
                 break
         else:
-            print(f"\033[31m{"> Passwords do not match. Please try again."}\033[0m")
+            error("> Passwords do not match. Please try again.")
             continue
 
 def delete_password(domain, user) -> None:
     if not if_passwords_exists():
-        print(f"\033[31m{"\n> No saved passwords"}\033[0m")
-        pause()
+        error("\n> No saved passwords")
     else:
         with sqlite3.connect(DB_NAME) as connect:
             cursor = connect.cursor()
@@ -285,24 +280,21 @@ def delete_password(domain, user) -> None:
             if question == 'y':
                 cursor.execute("DELETE FROM passwords WHERE domain_name=? AND user_name=?", (domain, user))
                 if cursor.rowcount == 0:
-                    print(f"\033[31m{"> Password not found."}\033[0m")
-                    pause()
+                    error("> Password not found.")
                 else:
-                    print(f"\033[32m{"> Password deleted."}\033[0m")
-                    pause()
+                    success("> Password deleted.")
                     
             elif question == 'n':
                 pass
             else:
-                print(f"\033[31m{"\n> Enter a valid option!"}\033[0m")
+                error("\n> Enter a valid option.")
 
 def generate_password(length=20) -> None:
     chars = string.ascii_letters+string.digits+string.punctuation
     password = ''.join(secrets.choice(chars) for _ in range(length))
     print(password)
     pyperclip.copy(password)
-    print(f"\033[32m{"\n> Password copied to clipboard."}\033[0m")
-    pause()
+    success("\n> Password copied to clipboard.")
 
 # ------------------------
 # Encryption
