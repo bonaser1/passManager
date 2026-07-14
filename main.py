@@ -1,9 +1,8 @@
 import menu
 import functions
-import encryption
 
 functions.create_db()
-encryption.generate_and_save_key()
+functions.generate_and_save_key()
 
 if functions.check_master_password():
     menu.seting_master_password()

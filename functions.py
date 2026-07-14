@@ -1,9 +1,7 @@
-import encryption
 import os
 import sqlite3
 from pathlib import Path
 import pyperclip
-import encryption
 import bcrypt
 import menu
 import secrets
@@ -58,8 +56,13 @@ def main_func():
             add_password()
 
         elif choice == 3:
-            domain, user, password = get_info()
-            delete_password(domain, user)
+            if not if_passwords_exists():
+                print(f"\033[31m{"\n> No saved passwords"}\033[0m")
+                input('\nPress Enter to continue...')
+                clear()
+            else:
+                domain, user, password = get_info()
+                delete_password(domain, user)
 
         elif choice == 4:
             generate_password()
@@ -97,17 +100,14 @@ def get_info():
 # DataBase
 # ------------------------
 
-def connect_database(path):
-    sqlite3.connect(path)
-
 def create_db():
-    with connect_database(DB_NAME) as connect:
+    with sqlite3.connect(DB_NAME) as connect:
         cursor = connect.cursor()
 
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS passwords (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
-                domain TEXT NOT NULL,
+                domain_name TEXT NOT NULL,
                 user_name TEXT NOT NULL,
                 password TEXT NOT NULL,
                 created_at TEXT DEFAULT CURRENT_TIMESTAMP
@@ -128,7 +128,7 @@ def hash_password(plain_password):
 # ------------------------
 
 def check_master_password():
-    with connect_database(DB_NAME) as connect:
+    with sqlite3.connect(DB_NAME) as connect:
         cursor = connect.cursor()
 
         cursor.execute("SELECT master FROM master_password LIMIT 1")
@@ -137,7 +137,7 @@ def check_master_password():
     
 def set_master_password(plain_password):
     hashed_password = hash_password(plain_password)
-    with connect_database(DB_NAME) as connect:
+    with sqlite3.connect(DB_NAME) as connect:
         cursor = connect.cursor()
 
         cursor.execute("INSERT INTO master_password(master) VALUES (?)", (hashed_password,))
@@ -151,7 +151,7 @@ def get_master_password():
 
 def verify_master_password(plain_password) -> bool: 
     password_bytes = plain_password.encode('utf-8')
-    with connect_database(DB_NAME) as connect:
+    with sqlite3.connect(DB_NAME) as connect:
         cursor = connect.cursor()
         cursor.execute("SELECT master FROM master_password LIMIT 1")
         stored_hash = cursor.fetchone()
@@ -159,7 +159,7 @@ def verify_master_password(plain_password) -> bool:
 
 def change_master_password(plain_password):
     new_password = hash_password(plain_password)
-    with connect_database(DB_NAME) as connect:
+    with sqlite3.connect(DB_NAME) as connect:
         cursor = connect.cursor()
         cursor.execute("DELETE FROM master_password")
         cursor.execute("INSERT INTO master_password(master) VALUES (?)", (new_password,))
@@ -200,17 +200,24 @@ def change_master_password_flow():
 # Managing passwords
 # ------------------------
 
-def search_passwords():
-    with connect_database(DB_NAME) as connect:
+def if_passwords_exists() -> bool:
+    with sqlite3.connect(DB_NAME) as connect:
         cursor = connect.cursor()
 
         cursor.execute("SELECT 1 FROM passwords LIMIT 1")
         result = cursor.fetchone()
         if not result:
-            print(f"\033[31m{"\n> No saved passwords"}\033[0m")
-            input('\nPress Enter to continue...')
-            clear()
-        else:
+            return False
+        return True
+
+def search_passwords():
+    if not if_passwords_exists():
+        print(f"\033[31m{"\n> No saved passwords"}\033[0m")
+        input('\nPress Enter to continue...')
+        clear()
+    else:
+        with sqlite3.connect(DB_NAME) as connect:
+            cursor = connect.cursor()
             domain = searche_by_domain()
             cursor.execute("SELECT user_name, password FROM passwords WHERE domain_name=?", (domain,))
             search_res = cursor.fetchall()
@@ -227,7 +234,7 @@ def search_passwords():
                     input('\nPress Enter to continue...')
                     clear()
                 menu.options_list()
-                option = input('\n> Choose an option: ')
+                option = input('> Choose an option: ')
                 if option.upper() == 'C':
                     pyperclip.copy(decrypt_password(password))
                     print(f"\033[32m{"> Password copied to clipboard."}\033[0m")
@@ -239,8 +246,6 @@ def search_passwords():
                     clear()
                 elif option.upper() == 'D':
                     delete_password(domain, user)
-                    input('\nPress Enter to continue...')
-                    clear()
                 elif option.upper() == 'E':
                     domain, user, password = get_info()
                     edit_password(domain, user)
@@ -254,10 +259,10 @@ def search_passwords():
                 clear()
 
 def add_password():
-    with connect(DB_NAME) as connect:
+    with sqlite3.connect(DB_NAME) as connect:
         cursor = connect.cursor()
         domain, user, password = get_info()
-        encrypted_password = encryption.encrypt_password(password)
+        encrypted_password = encrypt_password(password)
         cursor.execute("INSERT INTO passwords(domain_name, user_name, password) VALUES (?, ?, ?)", (domain, user, encrypted_password))
         print(f"\033[32m{"\n> Done adding the new password."}\033[0m")
         input('\nPress Enter to continue...')
@@ -269,7 +274,7 @@ def edit_password(domain, user):
         confirm_new_password = input('> Confirm the new password: ')
         if new_password == confirm_new_password:
             hashed_new_password = hash_password(new_password)
-            with connect_database(DB_NAME) as connect:
+            with sqlite3.connect(DB_NAME) as connect:
                 cursor = connect.cursor()
                 cursor.execute("UPDATE passwords SET password=? WHERE domain_name=? AND user_name=? ", (hashed_new_password, domain, user))
                 print(f"\033[32m{"> Password modified successfully."}\033[0m")
@@ -281,25 +286,29 @@ def edit_password(domain, user):
             continue
 
 def delete_password(domain, user):
-    with connect_database(DB_NAME) as connect:
-        cursor = connect.cursor()
-        
-        question = input('> are you sure you want to delete that password? [y/n]: ')
-        if question == 'y':
-            row_count_before = cursor.rowcount()
-            cursor.execute("DELETE FROM passwords WHERE domain_name=? AND user_name=?", (domain, user))
-            if cursor.rowcount() < row_count_before:
-                print(f"\033[32m{"> Password deleted."}\033[0m")
-                input('\nPress Enter to continue...')
-                clear()
+    if not if_passwords_exists():
+        print(f"\033[31m{"\n> No saved passwords"}\033[0m")
+        input('\nPress Enter to continue...')
+        clear()
+    else:
+        with sqlite3.connect(DB_NAME) as connect:
+            cursor = connect.cursor()
+            question = input('> are you sure you want to delete that password? [y/n]: ')
+            if question == 'y':
+                cursor.execute("DELETE FROM passwords WHERE domain_name=? AND user_name=?", (domain, user))
+                if cursor.rowcount == 0:
+                    print(f"\033[31m{"> Password not found."}\033[0m")
+                    input('\nPress Enter to continue...')
+                    clear()
+                else:
+                    print(f"\033[32m{"> Password deleted."}\033[0m")
+                    input('\nPress Enter to continue...')
+                    clear()
+                    
+            elif question == 'n':
+                pass
             else:
-                print(f"\033[31m{"> Password not found."}\033[0m")
-                input('\nPress Enter to continue...')
-                clear()
-        elif question == 'n':
-            pass
-        else:
-            print(f"\033[31m{"\n> Enter a valid option!"}\033[0m")
+                print(f"\033[31m{"\n> Enter a valid option!"}\033[0m")
 
 def generate_password(length=20):
     chars = string.ascii_letters+string.digits+string.punctuation

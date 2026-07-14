@@ -51,7 +51,6 @@ def main():
 # Option list
 # ------------------------
 def options_list():
-    print('\n')
     print('     ╔════════════════════════════════════════╗')
     print('     ║  [C] Copy password                     ║')
     print('     ║  [V] View password                     ║')
