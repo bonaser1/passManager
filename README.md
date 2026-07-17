@@ -69,13 +69,13 @@ This project follows several security best practices:
 Clone the repository.
 
 ```bash
-git clone https://github.com/bonaser1/passManager.git
+git clone https://github.com/bonaser1/passwordManager_CLI.git
 ```
 
 Move into the project folder.
 
 ```bash
-cd password-manager
+cd passwordManager_CLI
 ```
 
 Install the dependencies.
