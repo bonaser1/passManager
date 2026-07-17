@@ -18,7 +18,7 @@ from cryptography.fernet import InvalidToken
 
 BASE_DIR = Path(__file__).parent
 DB_NAME = BASE_DIR/'passwordsDataBase.db'
-SALT_FILE = Path("salt.bin")
+SALT_FILE = BASE_DIR / "salt.bin"
 
 # ------------------------
 # OS
@@ -76,7 +76,7 @@ def create_db() -> None:
         """)
         cursor.execute("CREATE TABLE IF NOT EXISTS master_password (master TEXT NOT NULL, created_at TEXT DEFAULT CURRENT_TIMESTAMP)")
 
-def hash_password(plain_password) -> str:
+def hash_password(plain_password) -> bytes:
     password_bytes = plain_password.encode('utf-8')
     
     salt = bcrypt.gensalt()
@@ -96,7 +96,7 @@ def check_master_password() -> bool:
         result = cursor.fetchone()
         return result is None
     
-def set_master_password(plain_password) -> None:
+def set_master_password(plain_password: str) -> None:
     hashed_password = hash_password(plain_password)
     with sqlite3.connect(DB_NAME) as connect:
         cursor = connect.cursor()
@@ -116,12 +116,11 @@ def verify_master_password(plain_password) -> bool:
         stored_hash = cursor.fetchone()
         return bcrypt.checkpw(password_bytes, stored_hash[0])
 
-def change_master_password(plain_password) -> None:
+def change_master_password(plain_password: str) -> None:
     new_password = hash_password(plain_password)
     with sqlite3.connect(DB_NAME) as connect:
         cursor = connect.cursor()
-        cursor.execute("DELETE FROM master_password")
-        cursor.execute("INSERT INTO master_password(master) VALUES (?)", (new_password,))
+        cursor.execute("UPDATE master_password SET master=?", (new_password,))
     success("> Password changed successfully.")
 
 def change_master_password_flow() -> Fernet | None:
@@ -172,18 +171,14 @@ def change_master_password_flow() -> Fernet | None:
 # Managing passwords
 # ------------------------
 
-def if_passwords_exists() -> bool:
+def passwords_exist() -> bool:
     with sqlite3.connect(DB_NAME) as connect:
         cursor = connect.cursor()
-
         cursor.execute("SELECT 1 FROM passwords LIMIT 1")
-        result = cursor.fetchone()
-        if not result:
-            return False
-        return True
+        return cursor.fetchone() is not None
 
 def search_passwords(cipher: Fernet) -> None:
-    if not if_passwords_exists():
+    if not passwords_exist():
         error("\n> No saved passwords")
     else:
         with sqlite3.connect(DB_NAME) as connect:
@@ -195,7 +190,11 @@ def search_passwords(cipher: Fernet) -> None:
                 print('\n> passwords found: ')
                 for id, (user, password) in enumerate(search_res, start=1):
                     print(f'    {id}. {user}')
-                choice = int(input('\n> Choose a user: '))
+                try:
+                    choice = int(input('\n> Choose a user: '))
+                except ValueError:
+                    error("> Please enter a number.")
+                    return
                 if 1 <= choice <= len(search_res):
                     user, password = search_res[choice - 1]
                     
@@ -219,7 +218,7 @@ def search_passwords(cipher: Fernet) -> None:
             else:
                 error("\n> No data found.")
 
-def add_password(cipher) -> None:
+def add_password(cipher: Fernet) -> None:
     with sqlite3.connect(DB_NAME) as connect:
         cursor = connect.cursor()
         domain, user, password = get_info()
@@ -227,7 +226,7 @@ def add_password(cipher) -> None:
         cursor.execute("INSERT INTO passwords(domain_name, user_name, password) VALUES (?, ?, ?)", (domain, user, encrypted_password))
         success("\n> Done adding the new password.")
 
-def edit_password(domain, user, cipher) -> None:
+def edit_password(domain, user, cipher: Fernet) -> None:
     while True:
         new_password = input('> Enter the new password: ')
         confirm_new_password = input('> Confirm the new password: ')
@@ -243,7 +242,7 @@ def edit_password(domain, user, cipher) -> None:
             continue
 
 def delete_password(domain, user) -> None:
-    if not if_passwords_exists():
+    if not passwords_exist():
         error("\n> No saved passwords")
     else:
         with sqlite3.connect(DB_NAME) as connect:
@@ -272,7 +271,7 @@ def generate_password(length=20) -> None:
 # Encryption
 # ------------------------
 
-def derive_key(master_password) -> bytes:
+def derive_key(master_password: str) -> bytes:
     if not SALT_FILE.exists():
         salt = os.urandom(16)
         with open(SALT_FILE, "wb") as f:
@@ -289,7 +288,7 @@ def derive_key(master_password) -> bytes:
 
     return base64.urlsafe_b64encode(kdf.derive(master_password.encode()))
 
-def encrypt_password(password: str, cipher: Fernet) -> bytes:
+def encrypt_password(password: str, cipher: Fernet) -> str:
     encrypted_bytes = cipher.encrypt(password.encode())
     return encrypted_bytes.decode()
 
@@ -332,7 +331,7 @@ def main_func() -> None:
             add_password(cipher)
 
         elif choice == 3:
-            if not if_passwords_exists():
+            if not passwords_exist():
                 error("\n> No saved passwords")
             else:
                 domain, user, password = get_info()
